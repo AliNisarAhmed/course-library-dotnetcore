@@ -1,0 +1,9 @@
+/bin
+appsettings.json
+appsettings.Development.json
+launchsettings.json
+obj/CourseLibrary.API.csproj.nuget.dgspec.json
+obj/CourseLibrary.API.csproj.nuget.g.props
+obj/CourseLibrary.API.csproj.nuget.g.targets
+obj/project.assets.json
+/obj
