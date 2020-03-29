@@ -47,6 +47,18 @@ namespace CourseLibrary.API
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+            } 
+            else
+            {
+                // This sets up a fault handling middleware with a custom message - In Production
+                app.UseExceptionHandler(appBuilder => 
+                {
+                    appBuilder.Run(async context =>
+                    {
+                        context.Response.StatusCode = 500;
+                        await context.Response.WriteAsync("An unexpected fault happened. Try again later");
+                    });
+                });
             }
 
             app.UseRouting();

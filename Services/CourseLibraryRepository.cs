@@ -1,5 +1,6 @@
 ﻿using CourseLibrary.API.DbContexts;
-using CourseLibrary.API.Entities; 
+using CourseLibrary.API.Entities;
+using CourseLibrary.API.ResourceParameters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -120,6 +121,39 @@ namespace CourseLibrary.API.Services
         public IEnumerable<Author> GetAuthors()
         {
             return _context.Authors.ToList<Author>();
+        }
+
+        public IEnumerable<Author> GetAuthors(AuthorsResourceParameters req)
+        {
+
+            if (req == null)
+            {
+                throw new ArgumentException(nameof(req));
+            }
+
+            if (string.IsNullOrWhiteSpace(req.MainCategory) && string.IsNullOrWhiteSpace(req.SearchQuery))
+                return GetAuthors();
+
+            var collection = _context.Authors as IQueryable<Author>;
+
+            if (!string.IsNullOrWhiteSpace(req.MainCategory))
+            {
+                // that means the query was for filtering, hence we need exact match
+                var mainCategory = req.MainCategory.Trim();
+                collection = collection.Where(a => a.MainCategory == mainCategory);
+            }
+
+            if (!string.IsNullOrWhiteSpace(req.SearchQuery)) 
+            {
+                var searchQuery = req.SearchQuery.Trim();
+                collection = collection.Where(a =>
+                    a.MainCategory.Contains(searchQuery) ||
+                    a.FirstName.Contains(searchQuery) ||
+                    a.LastName.Contains(searchQuery)
+                    );
+            }
+
+            return collection;
         }
          
         public IEnumerable<Author> GetAuthors(IEnumerable<Guid> authorIds)

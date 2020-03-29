@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using CourseLibrary.API.Helpers;
 using CourseLibrary.API.Models;
+using CourseLibrary.API.ResourceParameters;
 using CourseLibrary.API.Services;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -25,10 +26,16 @@ namespace CourseLibrary.API.Controllers
                 throw new ArgumentException(nameof(mapper));
         }
 
-        [HttpGet("/api/authors")]
-        public ActionResult<IEnumerable<AuthorDTO>> GetAuthors()
+        [HttpGet()]
+        [HttpHead]  // This attribute adds support for HEAD requests for this route
+        public ActionResult<IEnumerable<AuthorDTO>> GetAuthors(
+            //[FromQuery] string mainCategory, // optional Data Binding attribute,
+            //string searchQuery
+            // we can also use separate "request" classes
+            [FromQuery] AuthorsResourceParameters request
+            )
         {
-            var authors = _clRepo.GetAuthors();
+            var authors = _clRepo.GetAuthors(request);
 
             var result = _mapper.Map<IEnumerable<AuthorDTO>>(authors);
 
