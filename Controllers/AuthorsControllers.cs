@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using CourseLibrary.API.Entities;
 using CourseLibrary.API.Helpers;
 using CourseLibrary.API.Models;
 using CourseLibrary.API.ResourceParameters;
@@ -42,7 +43,7 @@ namespace CourseLibrary.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{authorId:guid}")]
+        [HttpGet("{authorId:guid}", Name = "GetAuthor")]
         public ActionResult<AuthorDTO> GetAuthor(Guid authorId)
         {
             var author = _clRepo.GetAuthor(authorId);
@@ -50,6 +51,35 @@ namespace CourseLibrary.API.Controllers
                 return NotFound();
                 
             return new JsonResult(_mapper.Map<AuthorDTO>(author));
+        }
+
+        [HttpPost] 
+        public ActionResult<AuthorDTO> CreateAuthor(AuthorForCreationDTO author)
+        {
+            // null check is not needed for author
+            // .net core does it for us automatically
+
+            var authorEntity = _mapper.Map<Author>(author);
+            _clRepo.AddAuthor(authorEntity);
+            _clRepo.Save();
+
+            // AddAuthor method adds an Id value to the passed value.
+
+            var authorToReturn = _mapper.Map<AuthorDTO>(authorEntity);
+            return CreatedAtRoute(
+                "GetAuthor",
+                new { authorId = authorToReturn.Id }, // route paramters
+                authorToReturn
+                );
+        }
+
+        // HTTP Options request allows the client to check which HTTP methods are available on a route
+            // in this case /api/authors
+        [HttpOptions]
+        public IActionResult GetAuthorsOptions()
+        {
+            Response.Headers.Add("Allow", "GET,OPTIONS,POST");
+            return Ok();
         }
     }
 }
