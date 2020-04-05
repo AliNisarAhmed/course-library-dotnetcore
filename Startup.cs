@@ -4,7 +4,9 @@ using CourseLibrary.API.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,7 +30,51 @@ namespace CourseLibrary.API
             services.AddControllers(setUpAction =>
             {
                 setUpAction.ReturnHttpNotAcceptable = true;
-            }).AddXmlDataContractSerializerFormatters();
+            })
+                .AddXmlDataContractSerializerFormatters()
+
+                // READ UP ON WHAT's going on BELOW
+                // The code below is trying to conform .net core to http rfc 7807 (Http problem spec).
+                // to do that, if there is an error in validation, we are trying to send back a properly
+                // filled in error model object with correctly set content-type.
+                // to create a problemDetails instance we had to use GetRequiredService function which I am not sure about...
+                .ConfigureApiBehaviorOptions(setupAction =>
+                {
+                    setupAction.InvalidModelStateResponseFactory = context =>
+                    {
+                        // Create a problem Details object
+                        var problemDetailsFactory =
+                            context.HttpContext.RequestServices.GetRequiredService<ProblemDetailsFactory>();
+                        var problemDetails = problemDetailsFactory.CreateValidationProblemDetails(
+                            context.HttpContext,
+                            context.ModelState
+                            );
+
+                        // add additional info not added by default
+                        problemDetails.Detail = "See the errors field for details";
+                        problemDetails.Instance = context.HttpContext.Request.Path;
+
+                        // find out which status code to use 
+                        var actionExecutingContext =
+                            context as Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext;
+
+                        // if there are modelstate errors and all arguments were correctly found/parsed,
+                        // then we are dealing with validation errors
+                        if ((context.ModelState.ErrorCount > 0) &&
+                            (actionExecutingContext?.ActionArguments.Count == 
+                                context.ActionDescriptor.Parameters.Count))
+                        {
+                            problemDetails.Type = "https://courselibrary.com/modelvalidationproblems";
+                            problemDetails.Status = StatusCodes.Status422UnprocessableEntity;
+                            problemDetails.Title = "One or more validation errors occurred";
+                        }
+
+                        return new UnprocessableEntityObjectResult(problemDetails)
+                        {
+                            ContentTypes = { "action/problem+json" }
+                        };
+                    };
+                });
 
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
              

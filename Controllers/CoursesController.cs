@@ -76,5 +76,32 @@ namespace CourseLibrary.API.Controllers
 
             return Ok(result);
         }
+
+        [HttpPut("{courseId}")]
+        public ActionResult UpdateCourseForAuthor(Guid authorId, Guid courseId, CourseForUpdateDTO newCourse)
+        {
+            if (!_clRepo.AuthorExists(authorId))
+                return NotFound();
+
+            var courseForAuthorFromRepo = _clRepo.GetCourse(authorId, courseId);
+
+            if (courseForAuthorFromRepo == null)
+                return NotFound();
+
+            // map the entity to a CourseForUpdateDTO
+            // apply the update field values to the DTO
+            // map the CourseForUpdateDTO back to an entity
+            // the statement below carries out all the above 3 for us
+            _mapper.Map(newCourse, courseForAuthorFromRepo);
+
+            // The above statement copied the updates from the incoming object to the entity.
+            // But, we need to update the resourse, an entity is just a representation of the resource
+
+            _clRepo.UpdateCourse(courseForAuthorFromRepo);
+
+            _clRepo.Save();
+
+            return NoContent();  // can also return 200 Ok with updated resource
+        }
     }
 }
