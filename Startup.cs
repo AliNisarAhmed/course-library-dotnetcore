@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json.Serialization;
 using System;
 
 namespace CourseLibrary.API
@@ -31,8 +32,12 @@ namespace CourseLibrary.API
             {
                 setUpAction.ReturnHttpNotAcceptable = true;
             })
+                .AddNewtonsoftJson(setupAction =>
+                {
+                    setupAction.SerializerSettings.ContractResolver =
+                        new CamelCasePropertyNamesContractResolver();
+                })
                 .AddXmlDataContractSerializerFormatters()
-
                 // READ UP ON WHAT's going on BELOW
                 // The code below is trying to conform .net core to http rfc 7807 (Http problem spec).
                 // to do that, if there is an error in validation, we are trying to send back a properly
